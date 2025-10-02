@@ -1,3 +1,32 @@
+social-recipe-app/
+│── package.json                # Root (runs both frontend + backend)
+│── README.md                   # Project docs
+│── .gitignore                  # Ignore node_modules, env files etc.
+│
+├── backend/
+│   ├── package.json
+│   ├── server.js
+│   ├── .env
+│   ├── uploads/                # For recipe images
+│   ├── models/
+│   │   ├── User.js
+│   │   └── Recipe.js
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   └── recipeRoutes.js
+│   └── middleware/
+│       └── auth.js
+│
+├── frontend/
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── index.html
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       └── components/
+│           ├── Navbar.jsx
+│           └── RecipeCard.jsx
 {
   "name": "social-recipe-app",
   "version": "1.0.0",
