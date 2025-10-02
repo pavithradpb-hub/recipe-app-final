@@ -1,32 +1,4 @@
-social-recipe-app/
-│── package.json                # Root (runs both frontend + backend)
-│── README.md                   # Project docs
-│── .gitignore                  # Ignore node_modules, env files etc.
-│
-├── backend/
-│   ├── package.json
-│   ├── server.js
-│   ├── .env
-│   ├── uploads/                # For recipe images
-│   ├── models/
-│   │   ├── User.js
-│   │   └── Recipe.js
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   └── recipeRoutes.js
-│   └── middleware/
-│       └── auth.js
-│
-├── frontend/
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── index.html
-│   └── src/
-│       ├── main.jsx
-│       ├── App.jsx
-│       └── components/
-│           ├── Navbar.jsx
-│           └── RecipeCard.jsx
+package.json
 {
   "name": "social-recipe-app",
   "version": "1.0.0",
@@ -39,48 +11,18 @@ social-recipe-app/
     "concurrently": "^8.0.0"
   }
 }
-#!/bin/bash
-cd backend
-npm run dev &
-BACKEND_PID=$!
-cd ../frontend
-npm run dev -- --host 0.0.0.0 --port 5173 &
-FRONT_PID=$!
-wait $BACKEND_PID $FRONT_PID
+.replit
+language = "nodejs"
+run = "npm run start"
+.gitignore
 node_modules/
 .env
 backend/uploads/
-# 🍲 Social Recipe App
-
-A social recipe-sharing app where users can:
-- Register/login
-- Upload recipes with images
-- Edit, save, and categorize recipes
-- Comment and give feedback
-- Chat with other users
-
-## 🛠 Tech Stack
-- Backend: Node.js, Express, MongoDB, Socket.io
-- Frontend: React (Vite), Axios
-- Media uploads: Multer (can switch to Cloudinary later)
-
-## 🚀 How to run
-1. Clone repo  
-2. Install all dependencies:
-   ```bash
-   npm run install-all
-npm run start
-
----
-
-# 🖥 Backend files
-
-**`backend/package.json`**
-```json
+backend/
+backend/package.json
 {
   "name": "backend",
   "version": "1.0.0",
-  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js"
@@ -99,6 +41,11 @@ npm run start
     "nodemon": "^3.0.1"
   }
 }
+backend/.env
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=supersecret
+PORT=3000
+backend/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -116,27 +63,28 @@ app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// routes
+// Routes
 const authRoutes = require('./routes/authRoutes');
 const recipeRoutes = require('./routes/recipeRoutes');
 app.use('/api/auth', authRoutes);
 app.use('/api/recipes', recipeRoutes);
 
-// socket.io for messaging
-io.on('connection', socket => {
+// Socket.io for chat
+io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  socket.on('chatMessage', (msg) => {
-    io.emit('chatMessage', msg);
-  });
+  socket.on('chatMessage', (msg) => io.emit('chatMessage', msg));
 });
 
+// MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log("MongoDB connected");
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => console.log("Server running on port", PORT));
+    server.listen(process.env.PORT || 3000, () =>
+      console.log("Backend running")
+    );
   })
   .catch(err => console.log(err));
+backend/models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
@@ -146,6 +94,7 @@ const userSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('User', userSchema);
+backend/server/Recipe.js
 const mongoose = require('mongoose');
 
 const recipeSchema = new mongoose.Schema({
@@ -163,6 +112,7 @@ const recipeSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 module.exports = mongoose.model('Recipe', recipeSchema);
+backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
@@ -176,6 +126,7 @@ module.exports = (req, res, next) => {
     res.status(401).json({ error: "Invalid token" });
   }
 };
+backend/routes/authRoutes.js
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -204,6 +155,7 @@ router.post('/login', async (req, res) => {
 });
 
 module.exports = router;
+backend/routes/recipeRoutes.js
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -216,7 +168,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// create recipe
+// Create recipe
 router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
     const recipe = new Recipe({
@@ -233,15 +185,15 @@ router.post('/', auth, upload.single('image'), async (req, res) => {
   }
 });
 
-// get all recipes
+// Get all recipes
 router.get('/', async (req, res) => {
   const recipes = await Recipe.find().populate('createdBy', 'username');
   res.json(recipes);
 });
 
 module.exports = router;
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=supersecret
+frontend/
+frontend/package.json
 {
   "name": "frontend",
   "private": true,
@@ -261,16 +213,15 @@ JWT_SECRET=supersecret
     "vite": "^4.4.0"
   }
 }
+frontend/vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  server: {
-    host: '0.0.0.0',
-    port: 5173
-  }
+  server: { host: '0.0.0.0', port: 5173 }
 });
+frontend/src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -280,6 +231,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <App />
   </React.StrictMode>
 );
+frontend/src/App.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import RecipeCard from './components/RecipeCard';
@@ -306,6 +258,7 @@ function App() {
 }
 
 export default App;
+frontend/src/components/Navbar.jsx
 import React from 'react';
 
 export default function Navbar() {
@@ -315,6 +268,7 @@ export default function Navbar() {
     </nav>
   );
 }
+frontend/src/components/RecipeCard.jsx
 import React from 'react';
 
 export default function RecipeCard({ recipe }) {
